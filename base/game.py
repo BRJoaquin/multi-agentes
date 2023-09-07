@@ -38,8 +38,3 @@ class SimultaneousGame(ParallelEnv):
         game = copy.deepcopy(self)
         game.reset()
         return game
-
-
-
-
-
