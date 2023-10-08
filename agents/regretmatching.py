@@ -2,14 +2,18 @@ import numpy as np
 from base.agent import Agent
 from base.game import SimultaneousGame, AgentID, ActionDict
 
-class RegretMatching(Agent):
 
-    def __init__(self, game: SimultaneousGame, agent: AgentID, initial=None, seed=None) -> None:
+class RegretMatching(Agent):
+    def __init__(
+        self, game: SimultaneousGame, agent: AgentID, initial=None, seed=None
+    ) -> None:
         super().__init__(game=game, agent=agent)
-        if (initial is None):
-          self.curr_policy = np.full(self.game.num_actions(self.agent), 1/self.game.num_actions(self.agent))
+        if initial is None:
+            self.curr_policy = np.full(
+                self.game.num_actions(self.agent), 1 / self.game.num_actions(self.agent)
+            )
         else:
-          self.curr_policy = initial.copy()
+            self.curr_policy = initial.copy()
         self.cum_regrets = np.zeros(self.game.num_actions(self.agent))
         self.sum_policy = self.curr_policy.copy()
         self.learned_policy = self.curr_policy.copy()
@@ -19,24 +23,31 @@ class RegretMatching(Agent):
     def regrets(self, played_actions: ActionDict) -> dict[AgentID, float]:
         actions = played_actions.copy()
         a = actions[self.agent]
-        g = self.game.clone()
-        u = np.zeros(g.num_actions(self.agent), dtype=float)
-        # 
-        # TODO: calcular regrets
-        #
-        r = None
-        return r
-    
+        u = np.zeros(self.game.num_actions(self.agent), dtype=float)
+        for action in range(self.game.num_actions(self.agent)):
+            g = self.game.clone()
+            actions[self.agent] = action
+            g.step(actions)
+            u[action] = g.reward(self.agent)
+
+        regrets = u - u[a]
+        return regrets
+
     def regret_matching(self):
-        #
-        # TODO: calcular curr_policy y actualizar sum_policy
-        #
-        pass
+        positive_regrets = np.maximum(self.cum_regrets, 0)
+        sum_positive_regrets = np.sum(positive_regrets)
+        if sum_positive_regrets > 0:
+            self.curr_policy = positive_regrets / sum_positive_regrets
+        else:
+            self.curr_policy = np.full(
+                self.game.num_actions(self.agent), 1 / self.game.num_actions(self.agent)
+            )
+        self.sum_policy += self.curr_policy
 
     def update(self) -> None:
         actions = self.game.observe(self.agent)
         if actions is None:
-           return
+            return
         regrets = self.regrets(actions)
         self.cum_regrets += regrets
         self.regret_matching()
@@ -46,6 +57,6 @@ class RegretMatching(Agent):
     def action(self):
         self.update()
         return np.argmax(np.random.multinomial(1, self.curr_policy, size=1))
-    
+
     def policy(self):
         return self.learned_policy

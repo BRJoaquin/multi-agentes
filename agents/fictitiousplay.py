@@ -21,8 +21,7 @@ class FictitiousPlay(Agent):
                 for agent in self.game.agents
             }
             self.learned_policy = {
-                agent: np.zeros(self.game.num_actions(agent))
-                for agent in self.game.agents
+                agent: np.ones(self.game.num_actions(agent)) / self.game.num_actions(agent) for agent in self.game.agents
             }
         else:
             self.count = initial
