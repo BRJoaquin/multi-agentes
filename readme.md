@@ -2,7 +2,7 @@
 
 ## Autores
 
-Joaquin Vigna (171564)
+[Joaquin Vigna (171564)](https://github.com/BRJoaquin/)
 
 ## Repositorio
 
