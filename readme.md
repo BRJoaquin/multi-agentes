@@ -1,5 +1,13 @@
 # Experimento de Juegos Multiagente
 
+## Autores
+
+Joaquin Vigna (171564)
+
+## Repositorio
+
+[https://github.com/BRJoaquin/multi-agentes](https://github.com/BRJoaquin/multi-agentes)
+
 ## Introducción
 
 Este informe presenta un experimento de juegos multiagente utilizando tres tipos de agentes:
