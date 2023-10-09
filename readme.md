@@ -37,8 +37,9 @@ agent_vs_agent(g, agents, 10_000)
 ```
 
 ## Funciones Auxiliares
+
 Las funciones auxiliares incluyen `play_game` para jugar el juego, `plot_learned_strategies` para visualizar las estrategias aprendidas, y `plot_agent_results` para visualizar los resultados de los agentes (ganas, perdidas y empates). 
-Estas funciones utilizan bibliotecas como tqdm para la barra de progreso y matplotlib para la visualización.
+Estas funciones utilizan bibliotecas como tqdm para la barra de progreso y matplotlib para la visualización. Estas funciones pueden ser encontradas en el archivo `utils.py`.
 
 ## Observaciones y Resultados
 
