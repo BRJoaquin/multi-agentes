@@ -4,13 +4,13 @@ from gymnasium.spaces import Discrete, Text, Dict, Tuple
 from pettingzoo.utils import agent_selector
 from base.game import AlternatingGame, AgentID, ActionType
 
-class KuhnPoker3(AlternatingGame):
+class KuhnPoker(AlternatingGame):
 
     def __init__(self, render_mode='human'):
         self.render_mode = render_mode
 
         # agents
-        self.agents = ["agent_" + str(r) for r in range(3)]
+        self.agents = ["agent_" + str(r) for r in range(2)]
         self.possible_agents = self.agents[:]
         self.agent_name_mapping = dict(zip(self.agents, list(range(self.num_agents))))
 
@@ -22,14 +22,12 @@ class KuhnPoker3(AlternatingGame):
         }
 
         # states
-        self._max_moves = 5
+        self._max_moves = 3
         self._start = ''
-        self._terminalset = set(['ppp', 'bpp', 'bbp', 'bpb', 'bbb', 
-                                 'pbpp', 'pbpb', 'pbbp', 'pbbb',
-                                 'ppbpp', 'ppbbp', 'ppbpb', 'ppbbb'])
+        self._terminalset = set(['pp', 'pbp', 'pbb', 'bp', 'bb'])
         self._hist_space = Text(min_length=0, max_length=self._max_moves, charset=frozenset(self._moves))
         self._hist = None
-        self._card_names = ['J', 'Q', 'K', 'A']
+        self._card_names = ['J', 'Q', 'K']
         self._num_cards = len(self._card_names)
         self._cards = list(range(self._num_cards))
         self._card_space = Discrete(self._num_cards)
@@ -55,7 +53,21 @@ class KuhnPoker3(AlternatingGame):
         self.agent_selection = self._agent_selector.next()
 
         if self._hist in self._terminalset:
-            self._compute_rewards()
+            # game over - compute rewards
+            if self._hist == 'pp':                  
+                # pass pass
+                _rewards = list(map(lambda p: 1 if p == np.argmax(self._hand) else -1, range(self.num_agents))) 
+            elif self._hist == 'pbp':               
+                # pass bet pass
+                _rewards = list(map(lambda p: 1 if p == 1 else -1, range(self.num_agents)))
+            elif self._hist == 'bp':                
+                # bet pass
+                _rewards = list(map(lambda p: 1 if p == 0 else -1, range(self.num_agents))) 
+            else:                                   
+                # pass bet bet OR bet bet
+                _rewards = list(map(lambda p: 2 if p == np.argmax(self._hand) else -2, range(self.num_agents)))              
+        
+            self.rewards = dict(map(lambda p: (p, _rewards[self.agent_name_mapping[p]]), self.agents))
             self.terminations = dict(map(lambda p: (p, True), self.agents))
 
     def _set_initial(self, seed=None):
@@ -69,26 +81,7 @@ class KuhnPoker3(AlternatingGame):
         # reset agent selection
         self._agent_selector = agent_selector(self.agents)
         self.agent_selection = self._agent_selector.reset()
-    
-    def _compute_rewards(self) -> None:
-        N = self.num_agents
-        _rewards = np.full(N, -1)
-        bets = []
-        for i, a in enumerate(self._hist):
-            if a == 'b':
-                bets.append(i % N)
-                _rewards[i % N] -= 1
-        if len(bets) == 0:
-            winner = np.argmax(list(map(lambda i: self._hand[i], range(N))))
-            _rewards[winner] = N-1
-        else:
-            bets.sort()
-            best_card = np.max(list(map(lambda i: self._hand[i], bets)))
-            winner = np.max(list(map(lambda i: i if self._hand[i] == best_card else 0, bets)))
-            _rewards[winner] += 2 * len(bets) + (N - len(bets))
         
-        self.rewards = dict(map(lambda p: (p, _rewards[self.agent_name_mapping[p]]), self.agents))
-
     def reset(self, seed: int | None = None, options: dict | None = None) -> None:
         self._set_initial(seed=seed)
 
