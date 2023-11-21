@@ -15,7 +15,7 @@ class Node:
             agent (AgentID): The ID of current agent.
             obs (ObsType): The observation received by the geme.
         """
-        self.game = game
+        self.game = game.clone()
         self.agent = agent
         self.obs = obs
 
@@ -35,7 +35,7 @@ class Node:
         Args:
             utility: The utility value of the current strategy profile.
             node_utility: The utility value of the current node.
-            probability:
+            probability: The probability of reaching this node for the other agents.
         """
         regret = utility - node_utility
         self.cum_regret += probability * regret
@@ -127,7 +127,7 @@ class CounterFactualRegret(Agent):
         for a in game.action_iter(current_agent):
             # compute probability of reaching this node
             node_probability = probability.copy()
-            node_probability[game.agent_name_mapping[current_agent]] *= node.policy()[a]
+            node_probability[game.agent_name_mapping[current_agent]] *= node.curr_policy[a]
             # play action a
             game_clone = game.clone()
             game_clone.step(a)
@@ -136,13 +136,20 @@ class CounterFactualRegret(Agent):
                 game=game_clone, agent=agent, probability=node_probability
             )
 
-        node_utility = np.sum(utility * node.policy())
+        node_utility = np.sum(utility * node.curr_policy)
 
         # update node cumulative regrets using regret matching
         # we only update the regrets of the agent that is building the strategy
         if current_agent == agent:
+            # calculate probability of reaching this node for the other agents
+            oponent_probability = probability.copy()
+            oponent_probability[game.agent_name_mapping[current_agent]] = 1
+            oponent_probability = np.prod(oponent_probability)
+
             node.update(
-                utility=utility, node_utility=node_utility, probability=probability
+                utility=utility,
+                node_utility=node_utility,
+                probability=oponent_probability,
             )
 
         return node_utility
