@@ -127,7 +127,9 @@ class CounterFactualRegret(Agent):
         for a in game.action_iter(current_agent):
             # compute probability of reaching this node
             node_probability = probability.copy()
-            node_probability[game.agent_name_mapping[current_agent]] *= node.curr_policy[a]
+            node_probability[
+                game.agent_name_mapping[current_agent]
+            ] *= node.curr_policy[a]
             # play action a
             game_clone = game.clone()
             game_clone.step(a)

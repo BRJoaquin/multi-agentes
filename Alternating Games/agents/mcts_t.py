@@ -55,11 +55,15 @@ class MonteCarloTreeSearch(Agent):
     def action(self) -> ActionType:
         a, _ = self.mcts()
         return a
+    
+    def value(self) -> float:
+        _, v = self.mcts()
+        return v
 
     def mcts(self) -> (ActionType, float):
         root = MCTSNode(parent=None, game=self.game, action=None)
 
-        for i in range(self.simulations):
+        for _ in range(self.simulations):
             node = root
             node.game = self.game.clone()
 

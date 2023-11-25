@@ -1,6 +1,8 @@
 from base.game import AlternatingGame
 from base.agent import Agent, AgentID
 import numpy as np
+from tqdm import tqdm
+
 
 def play(game: AlternatingGame, agents: dict[AgentID, Agent]):
     game.reset()
@@ -11,9 +13,10 @@ def play(game: AlternatingGame, agents: dict[AgentID, Agent]):
     game.render()
     print(game.rewards)
 
+
 def run(game: AlternatingGame, agents: dict[AgentID, Agent], N=100):
     values = []
-    for i in range(N):    
+    for i in tqdm(range(N)):
         game.reset()
         while not game.terminated():
             action = agents[game.agent_selection].action()
