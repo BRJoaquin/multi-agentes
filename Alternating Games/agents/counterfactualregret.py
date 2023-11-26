@@ -74,9 +74,11 @@ class CounterFactualRegret(Agent):
         except:
             raise ValueError("Train agent before calling action()")
 
-    def train(self, niter=1000):
-        for _ in tqdm(range(niter)):
+    def train(self, niter=1000, callback=None, callback_every=100):
+        for i in tqdm(range(niter)):
             self.cfr()
+            if callback is not None and i % callback_every == 0:
+                callback(self, i)
 
     def cfr(self):
         game = self.game.clone()

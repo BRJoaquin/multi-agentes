@@ -1,7 +1,7 @@
 from agents.counterfactualregret import CounterFactualRegret
 import numpy as np
 from numpy import ndarray
-from base.game import AlternatingGame, AgentID, ObsType
+from base.game import AlternatingGame, AgentID, ActionType
 from base.agent import Agent
 from typing import Callable
 
@@ -13,25 +13,15 @@ class EnhancedCounterFactualRegret(CounterFactualRegret):
         agent: AgentID,
         value_estimator: Callable[[AlternatingGame, AgentID], float],
         max_depth=float("inf"),
+        action_selection: Callable[[AlternatingGame, AgentID], ActionType] = None,
     ) -> None:
         super().__init__(game, agent)
         self.value_estimator = value_estimator
+        self.action_selection = action_selection
         self.max_depth = max_depth
         self.current_depth = 0
 
     def cfr_rec(self, game: AlternatingGame, agent: AgentID, probability: ndarray):
-        """
-        Extends the CFR recursion with value estimation and depth limitation.
-
-        Args:
-            game (AlternatingGame): The game being played.
-            agent (AgentID): The ID of the agent that is building the strategy.
-            probability (ndarray): Vector of size num_agents, that contains the probability of each agent playing at the current node.
-            depth (int): Current depth of the tree.
-
-        Returns:
-            float: The utility of the current node for the specified agent.
-        """
         if self.current_depth >= self.max_depth:
             return self.estimate_value(game, agent)
 
@@ -44,11 +34,13 @@ class EnhancedCounterFactualRegret(CounterFactualRegret):
     def estimate_value(self, game: AlternatingGame, agent: AgentID):
         return self.value_estimator(game, agent)
 
-    # def action(self):
-    #     try:
-    #         node = self.node_dict[self.game.observe(self.agent)]
-    #         a = np.argmax(np.random.multinomial(1, node.policy(), size=1))
-    #         return a
-    #     except:
-    #         action, _ = self.estimate_value(self.game, self.agent)
-    #         return action
+    def action(self):
+        try:
+            a = super().action()
+        except:
+            if self.action_selection is None:
+                a = np.random.choice(self.game.available_actions())
+            else:
+                a = self.action_selection(self.game, self.agent)
+
+        return a

@@ -24,19 +24,19 @@ class MCTSNode:
         # self.value = (
         #     self.cum_rewards[self.game.agent_name_mapping[self.agent]] / self.visits
         # )
+
     def value(self, agent: AgentID) -> float:
+        if self.visits == 0:
+            return 0
         return self.cum_rewards[self.game.agent_name_mapping[agent]] / self.visits
 
 
-def ucb(node, C=sqrt(2)) -> float:
-    agent_idx = node.game.agent_name_mapping[node.agent]
-    return node.cum_rewards[agent_idx] / node.visits + C * sqrt(
-        log(node.parent.visits) / node.visits
-    )
+def ucb(node: MCTSNode, agent: AgentID, C=sqrt(2)) -> float:
+    return node.value(agent) + C * sqrt(log(node.parent.visits) / node.visits)
 
 
 def uct(node: MCTSNode, agent: AgentID) -> MCTSNode:
-    child = max(node.children, key=ucb)
+    child = max(node.children, key=lambda child: ucb(child, agent))
     return child
 
 
@@ -66,7 +66,7 @@ class MonteCarloTreeSearch(Agent):
         a, _ = self.mcts()
         return a
 
-    def estimate(self) -> ActionType:
+    def estimate(self) -> float:
         _, v = self.mcts()
         return v
 
@@ -103,6 +103,15 @@ class MonteCarloTreeSearch(Agent):
 
     def rollout(self, node):
         rewards = np.zeros(len(self.game.agents))
+
+        # in case the game is already done, we don't need to rollout
+        if node.game.done() or node.game.terminated():
+            game_reward = node.game.rewards
+            for _agent in node.game.agents:
+                rewards[self.game.agent_name_mapping[_agent]] += game_reward[_agent]
+            return rewards
+
+        # we play the game until it is done (random actions)
         for _ in range(self.rollouts):
             game = node.game.clone()
             while not game.done() and not game.terminated():
@@ -123,7 +132,7 @@ class MonteCarloTreeSearch(Agent):
                 curr_node.explored_children += 1
                 return unexplored_children
             else:
-                curr_node = self.selection(curr_node, self.agent)
+                curr_node = self.selection(curr_node, curr_node.agent)
                 pass
         return curr_node
 
@@ -155,6 +164,11 @@ class MonteCarloTreeSearch(Agent):
         return best_action
 
     def print_tree(self, node: MCTSNode, indent: int = 0):
-        print("  " * indent, node.game.observe(node.agent), node.value, node.visits)
+        print(
+            "  " * indent,
+            node.game.observe(node.agent),
+            node.value(self.agent),
+            node.visits,
+        )
         for child in node.children:
             self.print_tree(child, indent + 1)
