@@ -11,7 +11,7 @@ class EnhancedCounterFactualRegret(CounterFactualRegret):
         self,
         game: AlternatingGame,
         agent: AgentID,
-        value_estimator: Callable[[AlternatingGame, AgentID], float] = None,
+        value_estimator: Callable[[AlternatingGame, AgentID], float],
         max_depth=float("inf"),
     ) -> None:
         super().__init__(game, agent)
@@ -42,22 +42,13 @@ class EnhancedCounterFactualRegret(CounterFactualRegret):
         return utility
 
     def estimate_value(self, game: AlternatingGame, agent: AgentID):
-        """
-        Estimate the value of a node using the provided value estimator function.
+        return self.value_estimator(game, agent)
 
-        Args:
-            game (AlternatingGame): The game being played.
-            agent (AgentID): The ID of the agent.
-
-        Returns:
-            float: Estimated value of the current node.
-        """
-        return self.value_estimator(game, agent) if self.value_estimator else 0
-
-    def action(self):
-        try:
-            node = self.node_dict[self.game.observe(self.agent)]
-            a = np.argmax(np.random.multinomial(1, node.policy(), size=1))
-            return a
-        except:
-            return self.estimate_value(self.game, self.agent)
+    # def action(self):
+    #     try:
+    #         node = self.node_dict[self.game.observe(self.agent)]
+    #         a = np.argmax(np.random.multinomial(1, node.policy(), size=1))
+    #         return a
+    #     except:
+    #         action, _ = self.estimate_value(self.game, self.agent)
+    #         return action

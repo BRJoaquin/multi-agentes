@@ -13,9 +13,19 @@ class MCTSNode:
         self.children = []
         self.explored_children = 0
         self.visits = 0
-        self.value = 0
+        # self.value = 0
         self.cum_rewards = np.zeros(len(game.agents))
-        self.agent = self.game.agent_selection
+        self.agent = game.agent_selection
+
+    def update(self, rewards) -> None:
+        self.visits += 1
+        for i in range(len(rewards)):
+            self.cum_rewards[i] += rewards[i]
+        # self.value = (
+        #     self.cum_rewards[self.game.agent_name_mapping[self.agent]] / self.visits
+        # )
+    def value(self, agent: AgentID) -> float:
+        return self.cum_rewards[self.game.agent_name_mapping[agent]] / self.visits
 
 
 def ucb(node, C=sqrt(2)) -> float:
@@ -55,8 +65,8 @@ class MonteCarloTreeSearch(Agent):
     def action(self) -> ActionType:
         a, _ = self.mcts()
         return a
-    
-    def value(self) -> float:
+
+    def estimate(self) -> ActionType:
         _, v = self.mcts()
         return v
 
@@ -79,26 +89,21 @@ class MonteCarloTreeSearch(Agent):
             # update values / Backprop
             self.backprop(node, rewards)
 
-        action, value = self.action_selection(root)
+        action = self.action_selection(root)
 
-        return action, value
+        return action, root.value(self.agent)
 
     def backprop(self, node, rewards):
         # cumulate rewards and visits from node to root navigating backwards through parent
         if node is None:
             return
         else:
-            node.visits += 1
-            for i in range(len(rewards)):
-                node.cum_rewards[i] += rewards[i]
-            node.value = (
-                node.cum_rewards[self.game.agent_name_mapping[node.agent]] / node.visits
-            )
+            node.update(rewards)
             self.backprop(node.parent, rewards)
 
     def rollout(self, node):
         rewards = np.zeros(len(self.game.agents))
-        for i in range(self.rollouts):
+        for _ in range(self.rollouts):
             game = node.game.clone()
             while not game.done() and not game.terminated():
                 actions = game.num_actions(game.agent_selection)
@@ -139,14 +144,15 @@ class MonteCarloTreeSearch(Agent):
         best_action = None
         best_value = -float("inf")
 
-        for child in node.children:
-            child_value = child.value
+        for child_idx in range(node.explored_children):
+            child = node.children[child_idx]
+            child_value = child.value(self.agent)
 
             if child_value > best_value:
                 best_value = child_value
                 best_action = child.action
 
-        return best_action, best_value
+        return best_action
 
     def print_tree(self, node: MCTSNode, indent: int = 0):
         print("  " * indent, node.game.observe(node.agent), node.value, node.visits)
