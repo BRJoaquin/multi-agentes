@@ -72,7 +72,7 @@ class CounterFactualRegret(Agent):
             a = np.argmax(np.random.multinomial(1, node.policy(), size=1))
             return a
         except:
-            raise ValueError("Train agent before calling action()")
+            return np.random.choice(self.game.available_actions())
 
     def train(self, niter=1000, callback=None, callback_every=100):
         for i in tqdm(range(niter)):

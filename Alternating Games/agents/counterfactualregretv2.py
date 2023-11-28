@@ -36,11 +36,11 @@ class EnhancedCounterFactualRegret(CounterFactualRegret):
 
     def action(self):
         try:
-            a = super().action()
+            node = self.node_dict[self.game.observe(self.agent)]
+            a = np.argmax(np.random.multinomial(1, node.policy(), size=1))
         except:
             if self.action_selection is None:
                 a = np.random.choice(self.game.available_actions())
             else:
                 a = self.action_selection(self.game, self.agent)
-
         return a
